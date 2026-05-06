@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+qdrant-client
+voyageai
+anthropic
+pypdf
+python-dotenv
+pydantic

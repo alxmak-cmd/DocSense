@@ -1,0 +1,86 @@
+{
+  "version": "1.0",
+  "description": "Phase 1 DocSense evaluation query set",
+  "queries": [
+    {
+      "id": "q001",
+      "category": "answerable",
+      "query": "What is the retry policy for the payments webhook?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md"],
+      "notes": "Clear answer present in corpus"
+    },
+    {
+      "id": "q002",
+      "category": "answerable",
+      "query": "What authentication method does the API use?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md"],
+      "notes": "Direct factual question"
+    },
+    {
+      "id": "q003",
+      "category": "answerable",
+      "query": "What is the rate limit for API requests?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md"],
+      "notes": "Numeric value lookup"
+    },
+    {
+      "id": "q004",
+      "category": "not_answerable",
+      "query": "What is the deployment process for the frontend service?",
+      "expected_response_type": "not_found",
+      "expected_sources": [],
+      "notes": "Topic not covered in test corpus"
+    },
+    {
+      "id": "q005",
+      "category": "not_answerable",
+      "query": "How do I set up a local development environment?",
+      "expected_response_type": "not_found",
+      "expected_sources": [],
+      "notes": "Topic not covered in test corpus"
+    },
+    {
+      "id": "q006",
+      "category": "ambiguous",
+      "query": "How does error handling work?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md"],
+      "notes": "Broad query — should return partial answer with citation, not NOT_FOUND"
+    },
+    {
+      "id": "q007",
+      "category": "ambiguous",
+      "query": "What happens when a request fails?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md", "sample_runbook.md"],
+      "notes": "Overlapping coverage across two docs"
+    },
+    {
+      "id": "q008",
+      "category": "conflicting",
+      "query": "What is the timeout value for webhook requests?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md", "sample_runbook.md"],
+      "notes": "Both docs cover this with different values — conflict case"
+    },
+    {
+      "id": "q009",
+      "category": "conflicting",
+      "query": "How many retries does the system attempt before failing?",
+      "expected_response_type": "answered",
+      "expected_sources": ["sample_api_spec.md", "sample_runbook.md"],
+      "notes": "Intentional value mismatch between docs"
+    },
+    {
+      "id": "q010",
+      "category": "edge",
+      "query": ".",
+      "expected_response_type": "not_found",
+      "expected_sources": [],
+      "notes": "Degenerate input — should not crash or hallucinate"
+    }
+  ]
+}

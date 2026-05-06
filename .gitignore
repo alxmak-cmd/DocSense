@@ -1,0 +1,30 @@
+# Build brief — stays local
+docs/BMAD_SCAFFOLD_BRIEF_v2.md
+
+# Environment variables
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Qdrant (if switched to persistent mode)
+backend/qdrant_db/
+
+# Chroma (legacy)
+backend/chroma_db/
+
+# Eval results — generated output, not source
+backend/eval/eval_results/*.json
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
