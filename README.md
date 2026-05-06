@@ -1,120 +1,139 @@
 # DocSense
 
-**DocSense doesn't synthesize. It exposes.**
+> **"DocSense doesn't synthesize. It exposes."**
+
+Most documentation tools are built to answer questions. DocSense is built to surface what your docs *can't* agree on.
+
+When teams move fast, documentation drifts. API parameters get renamed. Versioned guides fall out of sync. Conflicting instructions accumulate across pages no one owns. Standard RAG systems summarize across all of it — confidently, invisibly wrong.
+
+DocSense treats conflict as a first-class signal. Every query returns not just an answer, but a trust score and a conflict report: what sources disagree, why, and where the drift originated.
 
 ---
 
-## What It Is
+## The Problem
 
-DocSense is a RAG-based documentation agent that answers questions about your internal docs and tells you exactly where the answer came from — or tells you it doesn't know. It surfaces conflicts between documents rather than silently resolving them. It attaches a confidence score to every answer based on retrieval similarity, not model confidence.
+Documentation debt is invisible until it isn't. Teams discover conflicts at the worst moments — in support escalations, during onboarding, mid-incident. By then, the cost is already paid.
 
-Built as a Phase 1 portfolio project demonstrating AI product thinking, backend architecture, and evaluation discipline.
-
----
-
-## Why It Exists
-
-Most AI documentation tools optimize for helpfulness over honesty. They synthesize across sources, resolve contradictions quietly, and return confident-sounding answers even when the underlying retrieval is weak. That works for demos. It fails in production, where a hallucinated API timeout or a wrong retry count causes real incidents.
-
-DocSense bets on trust over coverage. An explicit "not found" is more useful than a plausible-sounding wrong answer. A conflict surfaced is more useful than a conflict hidden.
+Existing tools (Glean, Guru, Notion AI) optimize for retrieval speed and answer fluency. None of them tell you when the sources they're drawing from contradict each other. That gap is the problem DocSense solves.
 
 ---
 
-## Architecture
+## How It Works
 
-| Layer | Choice |
-|---|---|
-| Frontend | React 18 + Vite, two-panel layout |
-| Backend | Python 3.11 + FastAPI, sync routes |
-| Embeddings | Voyage AI `voyage-3` (API-based, 1024-dim) |
-| Vector store | Qdrant in-memory (pre-built wheels, no compilation) |
-| LLM | Claude 3.5 Sonnet via Anthropic API |
-| Chunking | Custom recursive splitter (pure Python stdlib) |
+DocSense is a RAG (Retrieval-Augmented Generation) documentation agent with a trust layer built into the query pipeline.
+
+```
+User Query
+    │
+    ▼
+Embedding + Retrieval (Chroma vector store)
+    │
+    ▼
+Conflict Detection Engine
+    ├── Explicit Contradiction  (sources directly disagree)
+    ├── Version Drift           (same topic, different versions)
+    └── Parameter Mismatch      (same parameter, different values)
+    │
+    ▼
+Confidence-Weighted Response
+    └── ConfidenceBadge UI: HIGH / MEDIUM / LOW / CONFLICT
+```
+
+Queries that hit conflicting sources return a structured conflict report alongside the answer — not instead of it. Users get the response they asked for *and* the signal they need to trust it.
 
 ---
 
 ## Key Design Decisions
 
-- **Voyage AI over sentence-transformers.** Local models required C++ Build Tools to compile `chroma-hnswlib` on Windows and caused torch/transformers version conflicts in Anaconda environments. Voyage AI's `voyage-3` ships pre-built, adds no compilation step, and uses asymmetric `input_type` hints (`document` vs `query`) that improve retrieval precision. Upgrade trigger: if answer accuracy falls below 80%, switch to `voyage-3-large` via env var — no code changes.
+| Decision | Choice | Rationale |
+|---|---|---|
+| Vector store | Chroma | Lightweight, local-first, fits RAG eval iteration cycles |
+| Backend | Python / FastAPI | Native RAG ecosystem (LangChain, sentence-transformers) |
+| Frontend | React / Vite / Vercel | Fast iteration, clean deployment path |
+| LLM | Claude API | Strong instruction-following for conflict taxonomy prompts |
+| Conflict detection | Pre-synthesis, not post | Surface conflict before generating an answer, not after |
 
-- **Qdrant over Chroma.** ChromaDB 0.4.x required C++ Build Tools on Windows; 1.0.x replaced the HNSW backend with a Rust/C extension (`sqlite-vec`) that crashes at runtime on Windows. Qdrant ships pre-built wheels on all platforms with no native dependencies. The `RetrieverInterface` abstraction means the swap was one file and one import — no application logic changed. Phase 2 persistent storage is a one-line change: `QdrantClient(path="./qdrant_db")`.
-
-- **Conflict detection as a core differentiator.** The eval corpus intentionally contains contradictory values across `sample_api_spec.md` and `sample_runbook.md` (webhook timeout: 30s vs 60s; retry count: 3 vs 5). DocSense retrieves from both, cites both, and lets Claude surface the disagreement with source attribution. It does not resolve the conflict or pick a winner. This is a deliberate product decision: the user needs to know the docs disagree, not receive a synthesized answer that hides the inconsistency.
+The most consequential decision: conflict detection runs on retrieved chunks *before* the LLM synthesizes a response. Post-hoc conflict detection on generated text is unreliable. Pre-synthesis detection on source metadata is auditable.
 
 ---
 
-## Eval Results
+## Conflict Detection Taxonomy
 
-Evaluated against a 10-query structured test set covering answerable, not-answerable, ambiguous, conflicting, and edge cases.
+DocSense classifies conflicts into three explicit types rather than a generic "sources may disagree" hedge:
 
-| Metric | Result |
+- **Explicit Contradiction** — Two sources make directly opposing claims about the same fact or behavior.
+- **Version Drift** — The same topic is documented differently across versioned sources (e.g., v1 vs v2 API behavior).
+- **Parameter Mismatch** — The same parameter name appears with different types, defaults, or constraints across sources.
+
+Each type maps to a distinct resolution path, which surfaces in the UI and is logged for documentation owners.
+
+---
+
+## Evaluation Harness
+
+DocSense ships with a structured evaluation harness — not just unit tests, but outcome-oriented query coverage:
+
+- **10 structured test queries** across four categories: factual lookup, cross-doc synthesis, conflict trigger, edge case
+- **Named environment variables** for retrieval threshold (`MIN_RETRIEVAL_SCORE`) and coverage threshold (`MIN_COVERAGE_SCORE`)
+- **Two-tier evaluation**: retrieval quality (did we get the right chunks?) and response quality (did we use them correctly?)
+- Abstraction interfaces (`EmbedderInterface`, `RetrieverInterface`) enable swap-testing across embedding models and retrievers without rewriting eval logic
+
+The harness is designed to make model and retriever changes measurable, not just deployable.
+
+---
+
+## Repository Structure
+
+```
+docsense/
+├── docs/
+│   ├── PRFAQ_RAG_DocAgent_v3.md        # Problem framing, customer narrative, FAQs
+│   ├── PRD_RAG_DocAgent_v2.md          # Requirements, success metrics, conflict detection spec
+│   └── ARCHITECTURE_RAG_DocAgent_v2.md # Pipeline design, trust layer, latency budget
+├── backend/                            # FastAPI app, RAG pipeline, conflict detection engine
+├── frontend/                           # React/Vite app, ConfidenceBadge component
+└── README.md
+```
+
+### Portfolio Artifacts
+
+| Artifact | What It Covers |
 |---|---|
-| Response type accuracy | 70% |
-| Source match rate | 80% |
-| Avg latency | 2,152 ms |
-| P95 latency | 3,847 ms |
-| Pending manual grades | 10 |
-
-Manual grading fields (correctness, citation validity, hallucination detection) are initialized to `null` in the results JSON — ready for human review. Full results at `backend/eval/eval_results/`.
-
-> Note: accuracy reflects Phase 1 threshold tuning on a small corpus. Retrieval thresholds (`MIN_SIMILARITY_SCORE`, `MIN_COVERAGE_SCORE`) are explicit env var constants, not magic numbers, and are documented with rationale in the build brief.
+| [PRFAQ](docs/PRFAQ_RAG_DocAgent_v3.md) | Contrarian problem framing, customer narrative, FAQ handling of trust objections |
+| [PRD](docs/PRD_RAG_DocAgent_v2.md) | Success metrics, conflict detection mini-spec, flywheel mechanism, explicit non-goals |
+| [Architecture](docs/ARCHITECTURE_RAG_DocAgent_v2.md) | End-to-end pipeline, trust layer design, latency budget with sensitivity analysis, failure modes |
 
 ---
 
-## How to Run
+## Build Stack
 
-### Backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/Scripts/activate   # Windows bash
-pip install -r requirements.txt
-
-cp .env.example .env
-# Set ANTHROPIC_API_KEY and VOYAGE_API_KEY in .env
-
-uvicorn main:app --reload --workers 1 --loop asyncio --timeout-keep-alive 0
-# Running at http://127.0.0.1:8000
-```
-
-Ingest test documents:
-
-```bash
-python test_ingest.py
-```
-
-Run the eval harness:
-
-```bash
-python eval/eval_runner.py
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-# Running at http://localhost:5173
-```
-
----
-
-## Portfolio Artifacts
-
-| Document | Description |
+| Layer | Technology |
 |---|---|
-| [`docs/PRFAQ_RAG_DocAgent_v3.md`](docs/PRFAQ_RAG_DocAgent_v3.md) | Product vision, customer problem, FAQ |
-| [`docs/PRD_RAG_DocAgent_v2.md`](docs/PRD_RAG_DocAgent_v2.md) | Requirements, success metrics, phasing |
-| [`docs/ARCHITECTURE_RAG_DocAgent_v2.md`](docs/ARCHITECTURE_RAG_DocAgent_v2.md) | System design, data flow, tradeoff rationale |
+| Frontend | React, Vite, Vercel |
+| Backend | Python, FastAPI |
+| Vector Store | Chroma |
+| Embeddings | sentence-transformers |
+| LLM | Anthropic Claude API |
+| Method | BMAD Method v6.3 |
 
 ---
 
-## Phase 2 Roadmap
+## Status
 
-- **Persistent vector store.** Switch `QdrantClient(":memory:")` to `QdrantClient(path="./qdrant_db")` for local persistence, or connect to a hosted Qdrant cluster for production. The `RetrieverInterface` abstraction requires no other changes.
+| Phase | Status |
+|---|---|
+| Portfolio artifacts (PRFAQ, PRD, Architecture) | ✅ Complete |
+| BMAD scaffold and eval harness design | ✅ Complete |
+| Phase 1 build (backend + frontend + conflict detection stub) | 🔄 In progress |
+| Eval harness execution | ⬜ Queued |
+| Conflict detection full implementation | ⬜ Queued |
 
-- **Source crawlers.** Extend beyond file upload to ingest from Confluence spaces, GitHub repos, and Notion databases. Each crawler implements the same ingest pipeline — chunk, embed, store — with a `source_type` metadata field that makes the origin queryable.
+---
 
-- **Conflict detection UI.** When retrieved chunks disagree on a value, surface a visual conflict indicator in the `CitationList` alongside the similarity bars. Flag the specific fields in conflict and show both source values side by side, rather than leaving the user to notice the discrepancy in the answer text.
+## Design Philosophy
+
+DocSense is built on a single conviction: **trust is not a feature you add to a RAG system. It's a property you either design for from the start or don't have.**
+
+The conflict detection layer, the confidence badge, the evaluation harness, the explicit taxonomy — none of these are afterthoughts. They're the architecture.
+
+The goal isn't a smarter search. It's a documentation system that earns the right to be believed.
