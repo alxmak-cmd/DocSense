@@ -26,7 +26,7 @@ function DocumentRow({ doc }) {
       border: '1px solid #e2e8f0',
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {doc.name}
         </span>
         <span style={{ fontSize: 12, color: '#64748b' }}>
@@ -85,7 +85,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
         failures.push(`${doc.filename}: ${err.message}`)
       }
-      if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 1500))
+      if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 500))
     }
     setLoadingDemo(false)
     if (failures.length > 0) setDemoError(`Failed to load — ${failures.join(' | ')}`)
@@ -155,17 +155,17 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
 
       {/* App description */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <p style={{ fontSize: 13, color: '#1e293b', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.6 }}>
           DocSense is an AI-powered RAG (Retrieval-Augmented Generation) documentation agent that answers questions grounded in your docs — and flags when sources contradict each other.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>How to use:</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>How to use:</p>
           {[
             'Upload your documentation files (MD, TXT, or PDF)',
             'Ask a question about your docs',
             'DocSense retrieves relevant passages, generates a grounded answer with source citations and confidence score — and surfaces conflicts when sources disagree',
           ].map((step, i) => (
-            <p key={i} style={{ fontSize: 12, color: '#4b5563', lineHeight: 1.5 }}>
+            <p key={i} style={{ fontSize: 14, color: '#4b5563', lineHeight: 1.5 }}>
               {i + 1}. {step}
             </p>
           ))}
@@ -233,8 +233,8 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         gap: 8,
       }}>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Demo Mode</p>
-          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Demo Mode</p>
+          <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
             Load 6 pre-built docs with deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
           </p>
         </div>

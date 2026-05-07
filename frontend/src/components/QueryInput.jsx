@@ -78,14 +78,14 @@ export default function QueryInput({ onSubmit, loading, hasDocuments }) {
 
     {/* Preset questions */}
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 2 }}>
-      <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', whiteSpace: 'nowrap' }}>Demo questions:</span>
+      <span style={{ fontSize: 13, color: '#94a3b8', alignSelf: 'center', whiteSpace: 'nowrap' }}>Demo questions:</span>
       {PRESET_QUESTIONS.map(q => (
         <button
           key={q}
           onClick={() => setQuery(q)}
           disabled={loading}
           style={{
-            fontSize: 11,
+            fontSize: 13,
             padding: '4px 10px',
             borderRadius: 12,
             border: '1px solid #bae6fd',
