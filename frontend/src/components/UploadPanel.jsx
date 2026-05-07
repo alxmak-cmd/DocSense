@@ -235,7 +235,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         <div>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Demo Mode</p>
           <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-            Load 6 pre-built docs with deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
+            Load 3 pre-built docs, then use the preset questions to see DocSense retrieve grounded answers with source citations.
           </p>
         </div>
         <button
@@ -255,6 +255,9 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         >
           {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
         </button>
+        <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.4 }}>
+          Note: Due to free tier API limits, please wait 30 seconds between uploads if loading your own docs.
+        </p>
         {demoError && (
           <p style={{ fontSize: 11, color: '#dc2626', lineHeight: 1.4 }}>{demoError}</p>
         )}
