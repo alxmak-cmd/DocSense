@@ -3,6 +3,8 @@ import QueryInput from './components/QueryInput'
 import ResponseCard from './components/ResponseCard'
 import UploadPanel from './components/UploadPanel'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
 // Stable session ID for the lifetime of this browser tab
 const SESSION_ID = crypto.randomUUID()
 
@@ -16,7 +18,7 @@ export default function App() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch('/index/status')
+      const res = await fetch(`${API_BASE}/index/status`)
       if (res.ok) setIndexStatus(await res.json())
     } catch {
       // backend not yet reachable — silently ignore on mount
@@ -35,7 +37,7 @@ export default function App() {
     setError(null)
     setLastQuery(query)
     try {
-      const res = await fetch('/query', {
+      const res = await fetch(`${API_BASE}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, session_id: SESSION_ID }),

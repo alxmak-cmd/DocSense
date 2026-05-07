@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 const ACCEPTED = ['.md', '.txt', '.pdf']
 
 function toBase64(file) {
@@ -64,7 +65,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
 
     try {
       const content_base64 = await toBase64(file)
-      const res = await fetch('/ingest', {
+      const res = await fetch(`${API_BASE}/ingest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: file.name, content_base64 }),
