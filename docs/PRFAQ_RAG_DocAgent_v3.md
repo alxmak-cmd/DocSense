@@ -1,8 +1,6 @@
 # PRFAQ: DocSense — AI-Powered Documentation Agent
-**Classification:** Portfolio Artifact | Principal PM IC Candidate  
 **Format:** Amazon-style PRFAQ  
-**Version:** 3.0  
-**Target Roles:** Principal PM IC — AI platform and backend spaces (Twilio Copilot Backend, IDC AI Discovery Platform)
+**Version:** 3.0
 
 ---
 
@@ -91,12 +89,9 @@ A: Wedge (trust layer for static docs) → Gap Detection (identify undocumented 
 
 ---
 
-## ARTIFACT METADATA
+## Metadata
 
 | Field | Value |
 |---|---|
-| Target Roles | Twilio Principal PM (Copilot Backend), IDC Principal PM-T (AI Discovery Platform) |
-| Portfolio Signal | RAG pipeline design, trust-layer architecture, eval rigor, developer tooling intuition |
-| Build Method | BMAD Method v6.3 + Claude Code |
 | Stack | React / Vite / FastAPI / Voyage AI / Qdrant / Claude API |
 | Version | 3.0 — final for Phase 1 |
