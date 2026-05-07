@@ -3,7 +3,7 @@ import QueryInput from './components/QueryInput'
 import ResponseCard from './components/ResponseCard'
 import UploadPanel from './components/UploadPanel'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 
 // Stable session ID for the lifetime of this browser tab
 const SESSION_ID = crypto.randomUUID()

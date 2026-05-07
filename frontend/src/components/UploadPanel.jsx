@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 const ACCEPTED = ['.md', '.txt', '.pdf']
 
 function toBase64(file) {
