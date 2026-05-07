@@ -45,7 +45,7 @@ function TypeBadge({ type }) {
   )
 }
 
-export default function ResponseCard({ response, query, loading, error, retryMessage }) {
+export default function ResponseCard({ response, query, loading, error, retryMessage, onRetry }) {
   const cardStyle = {
     background: '#fff',
     border: '1px solid #e2e8f0',
@@ -75,6 +75,24 @@ export default function ResponseCard({ response, query, loading, error, retryMes
         <span style={{ fontSize: 13, fontWeight: 600, color: '#dc2626' }}>Error</span>
         <p style={{ fontSize: 13, color: '#7f1d1d' }}>{error}</p>
         <p style={{ fontSize: 12, color: '#94a3b8' }}>Check that the backend is running at 127.0.0.1:8000.</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            style={{
+              alignSelf: 'flex-start',
+              padding: '6px 14px',
+              borderRadius: 6,
+              border: '1px solid #fca5a5',
+              background: '#fff',
+              color: '#dc2626',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Try Again
+          </button>
+        )}
       </div>
     )
   }

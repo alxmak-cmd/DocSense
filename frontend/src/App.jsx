@@ -50,6 +50,19 @@ export default function App() {
     fetchStatus()
   }, [fetchStatus])
 
+  const handleClear = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE}/clear`, { method: 'DELETE' })
+    } catch {
+      // proceed with client-side reset even if backend is unreachable
+    }
+    setDocuments([])
+    setIndexStatus(null)
+    setResponse(null)
+    setLastQuery(null)
+    setError(null)
+  }, [])
+
   const handleQuery = useCallback(async (query) => {
     setLoading(true)
     setError(null)
@@ -67,29 +80,19 @@ export default function App() {
       return data
     }
 
-    const retryPrefixes = [
-      'Backend is waking up...',
-      'Still starting up...',
-    ]
-
     try {
-      let lastErr = null
-      for (let attempt = 0; attempt <= 2; attempt++) {
-        try {
-          setResponse(await attemptQuery())
-          lastErr = null
-          break
-        } catch (err) {
-          lastErr = err
-          if (attempt < 2 && err instanceof TypeError) {
-            await waitWithCountdown(retryPrefixes[attempt], 45, setRetryMessage)
-            setRetryMessage(null)
-          } else {
-            break
-          }
-        }
+      let data
+      try {
+        data = await attemptQuery()
+      } catch (err) {
+        if (!(err instanceof TypeError)) throw err
+        await waitWithCountdown('Backend is waking up...', 25, setRetryMessage)
+        setRetryMessage(null)
+        data = await attemptQuery()
       }
-      if (lastErr) setError(lastErr.message)
+      setResponse(data)
+    } catch (err) {
+      setError(err.message)
     } finally {
       setLoading(false)
       setRetryMessage(null)
@@ -119,6 +122,7 @@ export default function App() {
         <div style={{ width: '30%', flexShrink: 0, overflow: 'hidden' }}>
           <UploadPanel
             onIngest={handleIngest}
+            onClear={handleClear}
             documents={documents}
             indexStatus={indexStatus}
           />
@@ -139,6 +143,7 @@ export default function App() {
             loading={loading}
             error={error}
             retryMessage={retryMessage}
+            onRetry={lastQuery ? () => handleQuery(lastQuery) : null}
           />
           <QueryInput
             onSubmit={handleQuery}

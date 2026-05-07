@@ -73,3 +73,10 @@ app.include_router(query_router)
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.delete("/clear")
+async def clear() -> dict:
+    """Wipe all chunks from the in-memory vector store."""
+    app.state.retriever.clear()
+    return {"status": "ok", "message": "Vector store cleared"}

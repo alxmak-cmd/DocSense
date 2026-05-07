@@ -65,7 +65,7 @@ function DocumentRow({ doc }) {
   )
 }
 
-export default function UploadPanel({ onIngest, documents, indexStatus }) {
+export default function UploadPanel({ onIngest, onClear, documents, indexStatus }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [dragging, setDragging] = useState(false)
@@ -85,13 +85,12 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
   const handleLoadDemo = async () => {
     setLoadingDemo(true)
     setDemoError(null)
-    const failures = []
-    let coldStartRetries = 0
 
-    const retryPrefixes = [
-      'Backend is waking up...',
-      'Still starting up...',
-    ]
+    await onClear()
+    setDemoLoaded(false)
+
+    const failures = []
+    let coldStartRetried = false
 
     for (let i = 0; i < DEMO_DOCS.length; i++) {
       const doc = DEMO_DOCS[i]
@@ -108,27 +107,21 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         return data
       }
 
-      let success = false
-      let lastErr = null
-      for (let attempt = 0; attempt <= 2 && !success; attempt++) {
+      try {
+        let data
         try {
-          const data = await attemptIngest()
-          onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-          success = true
+          data = await attemptIngest()
         } catch (err) {
-          lastErr = err
-          if (attempt < 2 && err instanceof TypeError && coldStartRetries < 2) {
-            coldStartRetries++
-            await waitWithCountdown(retryPrefixes[coldStartRetries - 1], 45, setRetryMessage)
-            setRetryMessage(null)
-          } else {
-            break
-          }
+          if (!(err instanceof TypeError) || coldStartRetried) throw err
+          coldStartRetried = true
+          await waitWithCountdown('Backend is waking up...', 25, setRetryMessage)
+          setRetryMessage(null)
+          data = await attemptIngest()
         }
-      }
-      if (!success && lastErr) {
-        console.error(`Demo ingest failed [${doc.filename}]:`, lastErr.message)
-        failures.push(`${doc.filename}: ${lastErr.message}`)
+        onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+      } catch (err) {
+        console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
+        failures.push(`${doc.filename}: ${err.message}`)
       }
 
       if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 500))
@@ -162,30 +155,19 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
       return data
     }
 
-    const retryPrefixes = [
-      'Backend is waking up...',
-      'Still starting up...',
-    ]
-
     try {
-      let lastErr = null
-      for (let attempt = 0; attempt <= 2; attempt++) {
-        try {
-          const data = await attemptIngest()
-          onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-          lastErr = null
-          break
-        } catch (err) {
-          lastErr = err
-          if (attempt < 2 && err instanceof TypeError) {
-            await waitWithCountdown(retryPrefixes[attempt], 45, setRetryMessage)
-            setRetryMessage(null)
-          } else {
-            break
-          }
-        }
+      let data
+      try {
+        data = await attemptIngest()
+      } catch (err) {
+        if (!(err instanceof TypeError)) throw err
+        await waitWithCountdown('Backend is waking up...', 25, setRetryMessage)
+        setRetryMessage(null)
+        data = await attemptIngest()
       }
-      if (lastErr) setError(lastErr.message)
+      onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+    } catch (err) {
+      setError(err.message)
     } finally {
       setUploading(false)
       setRetryMessage(null)
@@ -364,6 +346,25 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           {documents.map((doc, i) => (
             <DocumentRow key={i} doc={doc} />
           ))}
+          <button
+            onClick={async () => { await onClear(); setDemoLoaded(false); setDemoError(null) }}
+            style={{
+              marginTop: 2,
+              padding: '6px 0',
+              borderRadius: 6,
+              border: '1px solid #fca5a5',
+              background: '#fff',
+              color: '#ef4444',
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => { e.target.style.background = '#fef2f2' }}
+            onMouseLeave={e => { e.target.style.background = '#fff' }}
+          >
+            Clear All Docs
+          </button>
         </div>
       )}
 

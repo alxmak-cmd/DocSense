@@ -135,6 +135,15 @@ class QdrantRetriever(RetrieverInterface):
                 ),
             )
 
+    def clear(self) -> None:
+        """Wipe all chunks by dropping and recreating the collection."""
+        with self._lock:
+            self._client.delete_collection(collection_name=COLLECTION_NAME)
+            self._client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+            )
+
     def get_status(self) -> dict:
         """Return document_count, chunk_count, and last_indexed timestamp."""
         with self._lock:
