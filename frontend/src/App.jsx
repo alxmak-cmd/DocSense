@@ -10,6 +10,7 @@ export default function App() {
   const [documents, setDocuments] = useState([])
   const [indexStatus, setIndexStatus] = useState(null)
   const [response, setResponse] = useState(null)
+  const [lastQuery, setLastQuery] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -32,6 +33,7 @@ export default function App() {
   const handleQuery = useCallback(async (query) => {
     setLoading(true)
     setError(null)
+    setLastQuery(query)
     try {
       const res = await fetch('/query', {
         method: 'POST',
@@ -87,6 +89,7 @@ export default function App() {
         }}>
           <ResponseCard
             response={response}
+            query={lastQuery}
             loading={loading}
             error={error}
           />

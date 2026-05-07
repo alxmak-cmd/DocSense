@@ -3,10 +3,12 @@ from typing import Literal
 
 
 class Citation(BaseModel):
+    chunk_id: str
     document_name: str
     section_header: str
     last_modified: str
-    chunk_preview: str      # first 100 chars of source chunk
+    chunk_preview: str      # excerpt starting from a clean sentence/line boundary
+    chunk_content: str      # full chunk text, returned for the expand view
     similarity_score: float  # retrieval similarity for this chunk
 
 
@@ -15,6 +17,7 @@ class QueryResponse(BaseModel):
     answer: str | None
     citations: list[Citation]
     confidence: Literal["high", "medium", "low", "none"]
+    conflict: bool = False
     session_id: str
 
 

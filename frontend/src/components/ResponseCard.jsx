@@ -45,7 +45,7 @@ function TypeBadge({ type }) {
   )
 }
 
-export default function ResponseCard({ response, loading, error }) {
+export default function ResponseCard({ response, query, loading, error }) {
   const cardStyle = {
     background: '#fff',
     border: '1px solid #e2e8f0',
@@ -105,7 +105,33 @@ export default function ResponseCard({ response, loading, error }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <TypeBadge type="answered" />
         <ConfidenceBadge confidence={response.confidence} />
+        {response.conflict && (
+          <span title="Sources contain conflicting values — review citations" style={{
+            display: 'inline-block',
+            padding: '2px 10px',
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 600,
+            background: '#fef3c7',
+            color: '#92400e',
+            border: '1px solid #fcd34d',
+          }}>
+            Conflict detected
+          </span>
+        )}
       </div>
+
+      {/* Question */}
+      {query && (
+        <div style={{
+          fontSize: 13,
+          color: '#64748b',
+          borderLeft: '3px solid #e2e8f0',
+          paddingLeft: 12,
+        }}>
+          {query}
+        </div>
+      )}
 
       {/* Answer */}
       <div style={{

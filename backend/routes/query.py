@@ -71,14 +71,16 @@ def query(body: QueryRequest, request: Request) -> QueryResponse:
     if answer is None:
         return _not_found_response(body.session_id)
 
-    # Step 8 — build citations
+    # Step 8 — build citations and detect conflict
     citations = [_to_citation(c) for c in filtered_chunks]
+    conflict = _detect_conflict(answer)
 
     return QueryResponse(
         response_type="answered",
         answer=answer,
         citations=citations,
         confidence=confidence,
+        conflict=conflict,
         session_id=body.session_id,
     )
 
@@ -103,8 +105,21 @@ def _not_found_response(session_id: str) -> QueryResponse:
         answer=None,
         citations=[],
         confidence="none",
+        conflict=False,
         session_id=session_id,
     )
+
+
+_CONFLICT_SIGNALS = frozenset([
+    "conflicting", "conflict", "contradicts", "contradiction",
+    "discrepancy", "inconsistent", "inconsistency", "disagrees",
+    "differs", "differ",
+])
+
+
+def _detect_conflict(answer: str) -> bool:
+    lower = answer.lower()
+    return any(signal in lower for signal in _CONFLICT_SIGNALS)
 
 
 def _score_confidence(
@@ -119,11 +134,37 @@ def _score_confidence(
     return "low"
 
 
+def _clean_preview(content: str, length: int = 150) -> str:
+    """
+    Return up to `length` chars starting from the first clean boundary.
+
+    Chunks created with overlap may start mid-word or mid-sentence.
+    Scans forward for the nearest heading, paragraph, or sentence start
+    so the preview always begins at a readable point.
+    """
+    text = content.lstrip()
+    if not text:
+        return ""
+    # Already starts cleanly: Markdown heading or capitalised sentence
+    if text[0] == "#" or text[0].isupper():
+        return text[:length]
+    # Mid-content start: find first clean boundary within first 300 chars
+    for sep in ("\n\n", "\n", ". ", "! ", "? "):
+        pos = text.find(sep, 0, 300)
+        if pos != -1:
+            candidate = text[pos + len(sep):].lstrip()
+            if candidate:
+                return candidate[:length]
+    return text[:length]
+
+
 def _to_citation(chunk: RetrievedChunk) -> Citation:
     return Citation(
+        chunk_id=chunk.chunk_id,
         document_name=chunk.document_name,
         section_header=chunk.section_header,
         last_modified=chunk.last_modified,
-        chunk_preview=chunk.content[:100],
+        chunk_preview=_clean_preview(chunk.content),
+        chunk_content=chunk.content,
         similarity_score=chunk.similarity_score,
     )

@@ -1,3 +1,16 @@
+# Patch platform.uname before voyageai is imported.
+# The voyageai client calls platform.uname() to build its User-Agent header.
+# On Windows + Anaconda, the WMI CPU query inside platform.py times out,
+# raising OSError 258 and crashing the request. Returning a safe static value
+# avoids the WMI call entirely; the User-Agent is cosmetic, not functional.
+import platform as _platform
+import collections
+
+_SafeUname = collections.namedtuple(
+    "uname_result", ["system", "node", "release", "version", "machine", "processor"]
+)
+_platform.uname = lambda: _SafeUname("Windows", "", "11", "", "AMD64", "")
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 

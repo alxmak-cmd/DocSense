@@ -24,6 +24,11 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Windows terminals default to CP1252; reconfigure stdout to UTF-8 so
+# non-ASCII characters (em dashes, smart quotes) print correctly.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 EVAL_DIR = Path(__file__).parent
 RESULTS_DIR = EVAL_DIR / "eval_results"
 QUERIES_FILE = EVAL_DIR / "eval_queries.json"

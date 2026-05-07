@@ -63,18 +63,23 @@ User Query
 
 ### ADR-1: Voyage AI over sentence-transformers
 
-**Decision:** Use Voyage AI API for embeddings instead of local sentence-transformers model.
+**Decision:** Use Voyage AI API (`voyage-3`) for embeddings instead of the originally specified local `sentence-transformers/all-MiniLM-L6-v2` model.
 
-**Context:** Original design used `all-MiniLM-L6-v2` via sentence-transformers. Windows/Anaconda environment had a torch/transformers version conflict that caused worker crashes on startup.
+**Context:** The BMAD brief specified `all-MiniLM-L6-v2` running locally, with zero marginal cost per embed as the primary rationale. During Phase 1 build, sentence-transformers failed: Windows/Anaconda environment had a torch/transformers version conflict that caused uvicorn worker crashes on startup. Local model download and initialization was blocked by the environment constraints.
 
 **Alternatives considered:**
-- Fix torch version conflict — high risk, Anaconda base environment interference
-- OpenAI text-embedding-3-small — viable, but adds OpenAI dependency to an Anthropic-stack portfolio
-- Voyage AI — Anthropic's recommended embedding partner, asymmetric document/query training, free tier sufficient for Phase 1
+- Fix torch version conflict — high risk; Anaconda base environment interference makes version pinning unreliable
+- OpenAI text-embedding-3-small — viable, but adds an OpenAI dependency to an Anthropic-stack portfolio project
+- Voyage AI (`voyage-3`) — Anthropic's recommended embedding partner; asymmetric document/query training; free tier sufficient for Phase 1; pre-built API with no local model download
 
-**Decision rationale:** Voyage AI removes the local ML dependency entirely, aligns with the Anthropic stack, and provides a genuine technical advantage (asymmetric embeddings) over the local model alternative.
+**Decision rationale:** Voyage AI removes the local ML dependency entirely, aligns with the Anthropic stack, and provides a genuine technical advantage (asymmetric embeddings improve retrieval precision) over the local model alternative.
 
-**Tradeoff:** Adds API dependency and rate limit constraint (3 RPM free tier). Eval runner requires 25s delay between queries. Paid tier resolves at $0.06/1M tokens.
+**Tradeoff accepted:** The original zero-marginal-cost rationale no longer holds. Voyage AI introduces:
+- External API dependency (service availability, rate limits)
+- Per-call cost ($0.06/1M tokens on paid tier; free tier is 3 RPM, which adds ~25s inter-query delay in the eval runner)
+- Network latency on the ingestion path (~200–400ms per embed call vs. ~5ms local)
+
+These costs are acceptable for Phase 1 portfolio scope. Production consideration: upgrade trigger should be cost-per-query exceeding acceptable threshold at scale, at which point migrating to a self-hosted model (via the EmbedderInterface abstraction) requires no application logic changes.
 
 ---
 

@@ -51,15 +51,16 @@ function CitationCard({ citation }) {
         </span>
       </div>
 
-      {/* Chunk preview */}
+      {/* Chunk preview / full content */}
       <div>
         <p style={{
           fontSize: 12,
           color: '#475569',
           lineHeight: 1.5,
           fontStyle: 'italic',
+          whiteSpace: expanded ? 'pre-wrap' : 'normal',
         }}>
-          "{expanded ? citation.chunk_preview : citation.chunk_preview}"
+          "{expanded ? citation.chunk_content : citation.chunk_preview}"
         </p>
         <button
           onClick={() => setExpanded(v => !v)}
@@ -83,12 +84,21 @@ function CitationCard({ citation }) {
 export default function CitationList({ citations }) {
   if (!citations?.length) return null
 
+  // Collapse only true duplicates: same chunk_id returned more than once
+  // (can occur when a document is ingested multiple times into an in-memory store).
+  const seen = new Set()
+  const deduped = citations.filter(c => {
+    if (seen.has(c.chunk_id)) return false
+    seen.add(c.chunk_id)
+    return true
+  })
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <h4 style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Sources ({citations.length})
+        Sources ({deduped.length})
       </h4>
-      {citations.map((c, i) => (
+      {deduped.map((c, i) => (
         <CitationCard key={i} citation={c} />
       ))}
     </div>
