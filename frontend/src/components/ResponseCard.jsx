@@ -45,7 +45,7 @@ function TypeBadge({ type }) {
   )
 }
 
-export default function ResponseCard({ response, query, loading, error }) {
+export default function ResponseCard({ response, query, loading, error, retryMessage }) {
   const cardStyle = {
     background: '#fff',
     border: '1px solid #e2e8f0',
@@ -59,7 +59,14 @@ export default function ResponseCard({ response, query, loading, error }) {
   }
 
   if (loading) {
-    return <div style={cardStyle}><LoadingSkeleton /></div>
+    return (
+      <div style={cardStyle}>
+        {retryMessage
+          ? <p style={{ fontSize: 13, color: '#0369a1', lineHeight: 1.6 }}>{retryMessage}</p>
+          : <LoadingSkeleton />
+        }
+      </div>
+    )
   }
 
   if (error) {

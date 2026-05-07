@@ -56,6 +56,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
   const [loadingDemo, setLoadingDemo] = useState(false)
   const [demoLoaded, setDemoLoaded] = useState(false)
   const [demoError, setDemoError] = useState(null)
+  const [retryMessage, setRetryMessage] = useState(null)
   const inputRef = useRef(null)
 
   const encodeContent = (str) => {
@@ -69,9 +70,12 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
     setLoadingDemo(true)
     setDemoError(null)
     const failures = []
+    let coldStartHandled = false
+
     for (let i = 0; i < DEMO_DOCS.length; i++) {
       const doc = DEMO_DOCS[i]
-      try {
+
+      const attemptIngest = async () => {
         const content_base64 = encodeContent(doc.content)
         const res = await fetch(`${API_BASE}/ingest`, {
           method: 'POST',
@@ -80,14 +84,35 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.detail || data.error || 'Ingest failed')
+        return data
+      }
+
+      try {
+        const data = await attemptIngest()
         onIngest({ name: data.document_name, chunks: data.chunks_indexed })
       } catch (err) {
-        console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
-        failures.push(`${doc.filename}: ${err.message}`)
+        if (err instanceof TypeError && !coldStartHandled) {
+          coldStartHandled = true
+          setRetryMessage('Backend is waking up — retrying in 30 seconds...')
+          await new Promise(r => setTimeout(r, 30000))
+          setRetryMessage(null)
+          try {
+            const data = await attemptIngest()
+            onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+          } catch (retryErr) {
+            console.error(`Demo ingest failed [${doc.filename}]:`, retryErr.message)
+            failures.push(`${doc.filename}: ${retryErr.message}`)
+          }
+        } else {
+          console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
+          failures.push(`${doc.filename}: ${err.message}`)
+        }
       }
       if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 500))
     }
+
     setLoadingDemo(false)
+    setRetryMessage(null)
     if (failures.length > 0) setDemoError(`Failed to load — ${failures.join(' | ')}`)
     else setDemoLoaded(true)
   }
@@ -102,7 +127,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
     setUploading(true)
     setError(null)
 
-    try {
+    const attemptIngest = async () => {
       const content_base64 = await toBase64(file)
       const res = await fetch(`${API_BASE}/ingest`, {
         method: 'POST',
@@ -111,11 +136,29 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || data.error || 'Ingest failed')
+      return data
+    }
+
+    try {
+      const data = await attemptIngest()
       onIngest({ name: data.document_name, chunks: data.chunks_indexed })
     } catch (err) {
-      setError(err.message)
+      if (err instanceof TypeError) {
+        setRetryMessage('Backend is waking up — retrying in 30 seconds...')
+        await new Promise(r => setTimeout(r, 30000))
+        setRetryMessage(null)
+        try {
+          const data = await attemptIngest()
+          onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+        } catch (retryErr) {
+          setError(retryErr.message)
+        }
+      } else {
+        setError(err.message)
+      }
     } finally {
       setUploading(false)
+      setRetryMessage(null)
     }
   }
 
@@ -262,6 +305,18 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           <p style={{ fontSize: 11, color: '#dc2626', lineHeight: 1.4 }}>{demoError}</p>
         )}
       </div>
+
+      {/* Cold start notice */}
+      <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+        Note: This app runs on a free-tier backend that sleeps after inactivity. First request may take up to 30 seconds to wake up — this is expected behavior for a portfolio deployment.
+      </p>
+
+      {/* Retry banner */}
+      {retryMessage && (
+        <p style={{ fontSize: 12, color: '#0369a1', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, padding: '8px 10px' }}>
+          {retryMessage}
+        </p>
+      )}
 
       {/* Error */}
       {error && (

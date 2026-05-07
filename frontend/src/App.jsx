@@ -16,6 +16,7 @@ export default function App() {
   const [lastQuery, setLastQuery] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [retryMessage, setRetryMessage] = useState(null)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -36,8 +37,10 @@ export default function App() {
   const handleQuery = useCallback(async (query) => {
     setLoading(true)
     setError(null)
+    setRetryMessage(null)
     setLastQuery(query)
-    try {
+
+    const attemptQuery = async () => {
       const res = await fetch(`${API_BASE}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,11 +48,27 @@ export default function App() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || data.error || 'Query failed')
-      setResponse(data)
+      return data
+    }
+
+    try {
+      setResponse(await attemptQuery())
     } catch (err) {
-      setError(err.message)
+      if (err instanceof TypeError) {
+        setRetryMessage('Backend is waking up — retrying in 30 seconds...')
+        await new Promise(r => setTimeout(r, 30000))
+        setRetryMessage(null)
+        try {
+          setResponse(await attemptQuery())
+        } catch (retryErr) {
+          setError(retryErr.message)
+        }
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
+      setRetryMessage(null)
     }
   }, [])
 
@@ -95,6 +114,7 @@ export default function App() {
             query={lastQuery}
             loading={loading}
             error={error}
+            retryMessage={retryMessage}
           />
           <QueryInput
             onSubmit={handleQuery}
