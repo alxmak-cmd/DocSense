@@ -37,7 +37,7 @@ class Generator:
 
     def __init__(self) -> None:
         self._client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        self._model = os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022")
+        self._model = os.getenv("LLM_MODEL", "claude-sonnet-4-5")
 
     def generate(self, query: str, chunks: list[RetrievedChunk]) -> str | None:
         """
