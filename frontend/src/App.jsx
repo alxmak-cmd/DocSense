@@ -3,6 +3,7 @@ import QueryInput from './components/QueryInput'
 import ResponseCard from './components/ResponseCard'
 import UploadPanel from './components/UploadPanel'
 
+// TODO: move to env var before any production use — currently hardcoded for Vercel/Render portfolio deployment
 const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 
 // Stable session ID for the lifetime of this browser tab

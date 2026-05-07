@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+// TODO: move to env var before any production use — currently hardcoded for Vercel/Render portfolio deployment
 const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 const ACCEPTED = ['.md', '.txt', '.pdf']
 

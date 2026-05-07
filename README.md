@@ -118,6 +118,20 @@ docsense/
 
 ---
 
+## Deployment
+
+The frontend is deployed on Vercel. The backend is deployed on Render.
+
+**Note:** The backend URL is currently hardcoded in `frontend/src/App.jsx` and `frontend/src/components/UploadPanel.jsx`:
+
+```js
+const API_BASE = 'https://docsense-backend-us3p.onrender.com'
+```
+
+If the Render service URL changes, update `API_BASE` in both files before redeploying.
+
+---
+
 ## Status
 
 | Phase | Status |
