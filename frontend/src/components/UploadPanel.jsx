@@ -147,14 +147,14 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
       {/* App description */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
-          DocSense answers questions grounded in your documentation — and flags when sources contradict each other.
+          DocSense is an AI-powered RAG (Retrieval-Augmented Generation) documentation agent that answers questions grounded in your docs — and flags when sources contradict each other.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <p style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>How to use:</p>
           {[
             'Upload your documentation files (MD, TXT, or PDF)',
             'Ask a question about your docs',
-            'DocSense returns an answer with source citations and confidence score — and surfaces conflicts when sources disagree',
+            'DocSense retrieves relevant passages, generates a grounded answer with source citations and confidence score — and surfaces conflicts when sources disagree',
           ].map((step, i) => (
             <p key={i} style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
               {i + 1}. {step}
