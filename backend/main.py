@@ -48,7 +48,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=[
+        "http://localhost:5173",
+        "https://doc-sense-lsqllehsi-alxmak-cmds-projects.vercel.app",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
