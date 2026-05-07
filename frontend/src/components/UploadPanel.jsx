@@ -70,7 +70,12 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
     setLoadingDemo(true)
     setDemoError(null)
     const failures = []
-    let coldStartHandled = false
+    let coldStartRetries = 0
+
+    const retryMessages = [
+      'Backend is waking up — retrying in 45 seconds...',
+      'Still waking up — retrying once more...',
+    ]
 
     for (let i = 0; i < DEMO_DOCS.length; i++) {
       const doc = DEMO_DOCS[i]
@@ -87,27 +92,30 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         return data
       }
 
-      try {
-        const data = await attemptIngest()
-        onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-      } catch (err) {
-        if (err instanceof TypeError && !coldStartHandled) {
-          coldStartHandled = true
-          setRetryMessage('Backend is waking up — retrying in 30 seconds...')
-          await new Promise(r => setTimeout(r, 30000))
-          setRetryMessage(null)
-          try {
-            const data = await attemptIngest()
-            onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-          } catch (retryErr) {
-            console.error(`Demo ingest failed [${doc.filename}]:`, retryErr.message)
-            failures.push(`${doc.filename}: ${retryErr.message}`)
+      let success = false
+      let lastErr = null
+      for (let attempt = 0; attempt <= 2 && !success; attempt++) {
+        try {
+          const data = await attemptIngest()
+          onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+          success = true
+        } catch (err) {
+          lastErr = err
+          if (attempt < 2 && err instanceof TypeError && coldStartRetries < 2) {
+            coldStartRetries++
+            setRetryMessage(retryMessages[coldStartRetries - 1])
+            await new Promise(r => setTimeout(r, 45000))
+            setRetryMessage(null)
+          } else {
+            break
           }
-        } else {
-          console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
-          failures.push(`${doc.filename}: ${err.message}`)
         }
       }
+      if (!success && lastErr) {
+        console.error(`Demo ingest failed [${doc.filename}]:`, lastErr.message)
+        failures.push(`${doc.filename}: ${lastErr.message}`)
+      }
+
       if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 500))
     }
 
@@ -139,23 +147,31 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
       return data
     }
 
+    const retryMessages = [
+      'Backend is waking up — retrying in 45 seconds...',
+      'Still waking up — retrying once more...',
+    ]
+
     try {
-      const data = await attemptIngest()
-      onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-    } catch (err) {
-      if (err instanceof TypeError) {
-        setRetryMessage('Backend is waking up — retrying in 30 seconds...')
-        await new Promise(r => setTimeout(r, 30000))
-        setRetryMessage(null)
+      let lastErr = null
+      for (let attempt = 0; attempt <= 2; attempt++) {
         try {
           const data = await attemptIngest()
           onIngest({ name: data.document_name, chunks: data.chunks_indexed })
-        } catch (retryErr) {
-          setError(retryErr.message)
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+          if (attempt < 2 && err instanceof TypeError) {
+            setRetryMessage(retryMessages[attempt])
+            await new Promise(r => setTimeout(r, 45000))
+            setRetryMessage(null)
+          } else {
+            break
+          }
         }
-      } else {
-        setError(err.message)
       }
+      if (lastErr) setError(lastErr.message)
     } finally {
       setUploading(false)
       setRetryMessage(null)

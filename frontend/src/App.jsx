@@ -51,21 +51,30 @@ export default function App() {
       return data
     }
 
+    const retryMessages = [
+      'Backend is waking up — retrying in 45 seconds...',
+      'Still waking up — retrying once more...',
+    ]
+
     try {
-      setResponse(await attemptQuery())
-    } catch (err) {
-      if (err instanceof TypeError) {
-        setRetryMessage('Backend is waking up — retrying in 30 seconds...')
-        await new Promise(r => setTimeout(r, 30000))
-        setRetryMessage(null)
+      let lastErr = null
+      for (let attempt = 0; attempt <= 2; attempt++) {
         try {
           setResponse(await attemptQuery())
-        } catch (retryErr) {
-          setError(retryErr.message)
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+          if (attempt < 2 && err instanceof TypeError) {
+            setRetryMessage(retryMessages[attempt])
+            await new Promise(r => setTimeout(r, 45000))
+            setRetryMessage(null)
+          } else {
+            break
+          }
         }
-      } else {
-        setError(err.message)
       }
+      if (lastErr) setError(lastErr.message)
     } finally {
       setLoading(false)
       setRetryMessage(null)
