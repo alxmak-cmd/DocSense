@@ -88,15 +88,15 @@ export default function QueryInput({ onSubmit, loading, hasDocuments }) {
             fontSize: 11,
             padding: '4px 10px',
             borderRadius: 12,
-            border: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            color: '#475569',
+            border: '1px solid #bae6fd',
+            background: '#f0f9ff',
+            color: '#0369a1',
             cursor: loading ? 'not-allowed' : 'pointer',
             whiteSpace: 'nowrap',
             transition: 'background 0.1s, border-color 0.1s',
           }}
-          onMouseEnter={e => { if (!loading) { e.target.style.background = '#e2e8f0'; e.target.style.borderColor = '#cbd5e1' } }}
-          onMouseLeave={e => { e.target.style.background = '#f8fafc'; e.target.style.borderColor = '#e2e8f0' }}
+          onMouseEnter={e => { if (!loading) { e.target.style.background = '#e0f2fe'; e.target.style.borderColor = '#7dd3fc' } }}
+          onMouseLeave={e => { e.target.style.background = '#f0f9ff'; e.target.style.borderColor = '#bae6fd' }}
         >
           {q}
         </button>

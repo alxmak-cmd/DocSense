@@ -29,7 +29,7 @@ function DocumentRow({ doc }) {
         <span style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {doc.name}
         </span>
-        <span style={{ fontSize: 11, color: '#94a3b8' }}>
+        <span style={{ fontSize: 12, color: '#64748b' }}>
           {doc.chunks} chunks
         </span>
       </div>
@@ -58,13 +58,21 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
   const [demoError, setDemoError] = useState(null)
   const inputRef = useRef(null)
 
+  const encodeContent = (str) => {
+    const bytes = new TextEncoder().encode(str)
+    let binary = ''
+    bytes.forEach(b => { binary += String.fromCharCode(b) })
+    return btoa(binary)
+  }
+
   const handleLoadDemo = async () => {
     setLoadingDemo(true)
     setDemoError(null)
     const failures = []
-    for (const doc of DEMO_DOCS) {
+    for (let i = 0; i < DEMO_DOCS.length; i++) {
+      const doc = DEMO_DOCS[i]
       try {
-        const content_base64 = btoa(unescape(encodeURIComponent(doc.content)))
+        const content_base64 = encodeContent(doc.content)
         const res = await fetch(`${API_BASE}/ingest`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -75,11 +83,12 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         onIngest({ name: data.document_name, chunks: data.chunks_indexed })
       } catch (err) {
         console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
-        failures.push(doc.filename)
+        failures.push(`${doc.filename}: ${err.message}`)
       }
+      if (i < DEMO_DOCS.length - 1) await new Promise(r => setTimeout(r, 1500))
     }
     setLoadingDemo(false)
-    if (failures.length > 0) setDemoError(`Failed to load: ${failures.join(', ')}`)
+    if (failures.length > 0) setDemoError(`Failed to load — ${failures.join(' | ')}`)
     else setDemoLoaded(true)
   }
 
@@ -146,17 +155,17 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
 
       {/* App description */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13, color: '#1e293b', lineHeight: 1.6 }}>
           DocSense is an AI-powered RAG (Retrieval-Augmented Generation) documentation agent that answers questions grounded in your docs — and flags when sources contradict each other.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>How to use:</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>How to use:</p>
           {[
             'Upload your documentation files (MD, TXT, or PDF)',
             'Ask a question about your docs',
             'DocSense retrieves relevant passages, generates a grounded answer with source citations and confidence score — and surfaces conflicts when sources disagree',
           ].map((step, i) => (
-            <p key={i} style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+            <p key={i} style={{ fontSize: 12, color: '#4b5563', lineHeight: 1.5 }}>
               {i + 1}. {step}
             </p>
           ))}
@@ -207,18 +216,25 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         </div>
       </div>
 
+      {/* Demo mode separator */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+        <div style={{ flex: 1, borderTop: '1px solid #e2e8f0' }} />
+        <span style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>New here?</span>
+        <div style={{ flex: 1, borderTop: '1px solid #e2e8f0' }} />
+      </div>
+
       {/* Demo mode */}
       <div style={{
-        border: '1px solid #e2e8f0',
+        border: '1px solid #bae6fd',
         borderRadius: 8,
-        padding: '10px 12px',
+        padding: '12px 14px',
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
       }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Demo Mode</p>
-          <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Demo Mode</p>
+          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
             Load 6 pre-built docs with deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
           </p>
         </div>
@@ -226,13 +242,13 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           onClick={handleLoadDemo}
           disabled={loadingDemo || demoLoaded}
           style={{
-            padding: '6px 0',
+            padding: '7px 0',
             borderRadius: 6,
-            border: `1px solid ${demoLoaded ? '#86efac' : '#e2e8f0'}`,
-            background: demoLoaded ? '#f0fdf4' : '#f8fafc',
-            color: demoLoaded ? '#15803d' : loadingDemo ? '#94a3b8' : '#475569',
+            border: `1px solid ${demoLoaded ? '#86efac' : '#bae6fd'}`,
+            background: demoLoaded ? '#f0fdf4' : '#f0f9ff',
+            color: demoLoaded ? '#15803d' : loadingDemo ? '#94a3b8' : '#0369a1',
             fontWeight: 600,
-            fontSize: 12,
+            fontSize: 13,
             cursor: loadingDemo || demoLoaded ? 'default' : 'pointer',
             transition: 'background 0.15s',
           }}
@@ -240,7 +256,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
         </button>
         {demoError && (
-          <p style={{ fontSize: 11, color: '#dc2626' }}>{demoError}</p>
+          <p style={{ fontSize: 11, color: '#dc2626', lineHeight: 1.4 }}>{demoError}</p>
         )}
       </div>
 
