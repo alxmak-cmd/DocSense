@@ -5,6 +5,22 @@ import { DEMO_DOCS } from '../demoData'
 const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 const ACCEPTED = ['.md', '.txt', '.pdf']
 
+function waitWithCountdown(prefix, seconds, onTick) {
+  return new Promise(resolve => {
+    let remaining = seconds
+    onTick(`${prefix} retrying in ${remaining}s`)
+    const interval = setInterval(() => {
+      remaining--
+      if (remaining <= 0) {
+        clearInterval(interval)
+        resolve()
+      } else {
+        onTick(`${prefix} retrying in ${remaining}s`)
+      }
+    }, 1000)
+  })
+}
+
 function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -72,9 +88,9 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
     const failures = []
     let coldStartRetries = 0
 
-    const retryMessages = [
-      'Backend is waking up — retrying in 45 seconds...',
-      'Still waking up — retrying once more...',
+    const retryPrefixes = [
+      'Backend is waking up...',
+      'Still starting up...',
     ]
 
     for (let i = 0; i < DEMO_DOCS.length; i++) {
@@ -103,8 +119,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           lastErr = err
           if (attempt < 2 && err instanceof TypeError && coldStartRetries < 2) {
             coldStartRetries++
-            setRetryMessage(retryMessages[coldStartRetries - 1])
-            await new Promise(r => setTimeout(r, 45000))
+            await waitWithCountdown(retryPrefixes[coldStartRetries - 1], 45, setRetryMessage)
             setRetryMessage(null)
           } else {
             break
@@ -147,9 +162,9 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
       return data
     }
 
-    const retryMessages = [
-      'Backend is waking up — retrying in 45 seconds...',
-      'Still waking up — retrying once more...',
+    const retryPrefixes = [
+      'Backend is waking up...',
+      'Still starting up...',
     ]
 
     try {
@@ -163,8 +178,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         } catch (err) {
           lastErr = err
           if (attempt < 2 && err instanceof TypeError) {
-            setRetryMessage(retryMessages[attempt])
-            await new Promise(r => setTimeout(r, 45000))
+            await waitWithCountdown(retryPrefixes[attempt], 45, setRetryMessage)
             setRetryMessage(null)
           } else {
             break

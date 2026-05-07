@@ -9,6 +9,22 @@ const API_BASE = 'https://docsense-backend-us3p.onrender.com'
 // Stable session ID for the lifetime of this browser tab
 const SESSION_ID = crypto.randomUUID()
 
+function waitWithCountdown(prefix, seconds, onTick) {
+  return new Promise(resolve => {
+    let remaining = seconds
+    onTick(`${prefix} retrying in ${remaining}s`)
+    const interval = setInterval(() => {
+      remaining--
+      if (remaining <= 0) {
+        clearInterval(interval)
+        resolve()
+      } else {
+        onTick(`${prefix} retrying in ${remaining}s`)
+      }
+    }, 1000)
+  })
+}
+
 export default function App() {
   const [documents, setDocuments] = useState([])
   const [indexStatus, setIndexStatus] = useState(null)
@@ -51,9 +67,9 @@ export default function App() {
       return data
     }
 
-    const retryMessages = [
-      'Backend is waking up — retrying in 45 seconds...',
-      'Still waking up — retrying once more...',
+    const retryPrefixes = [
+      'Backend is waking up...',
+      'Still starting up...',
     ]
 
     try {
@@ -66,8 +82,7 @@ export default function App() {
         } catch (err) {
           lastErr = err
           if (attempt < 2 && err instanceof TypeError) {
-            setRetryMessage(retryMessages[attempt])
-            await new Promise(r => setTimeout(r, 45000))
+            await waitWithCountdown(retryPrefixes[attempt], 45, setRetryMessage)
             setRetryMessage(null)
           } else {
             break
