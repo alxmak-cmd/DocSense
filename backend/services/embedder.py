@@ -1,8 +1,11 @@
+import logging
 import os
 
 import voyageai
 
 from interfaces.embedder_interface import EmbedderInterface
+
+logger = logging.getLogger(__name__)
 
 
 class LocalEmbedder(EmbedderInterface):
@@ -23,10 +26,18 @@ class LocalEmbedder(EmbedderInterface):
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of document chunks. Used during ingestion."""
-        result = self._client.embed(texts, model=self._model, input_type="document")
-        return result.embeddings
+        try:
+            result = self._client.embed(texts, model=self._model, input_type="document")
+            return result.embeddings
+        except Exception as e:
+            logger.error("Voyage AI embed (document) failed: %s", e, exc_info=True)
+            raise
 
     def embed_query(self, query: str) -> list[float]:
         """Embed a single query string. Used at query time."""
-        result = self._client.embed([query], model=self._model, input_type="query")
-        return result.embeddings[0]
+        try:
+            result = self._client.embed([query], model=self._model, input_type="query")
+            return result.embeddings[0]
+        except Exception as e:
+            logger.error("Voyage AI embed (query) failed: %s", e, exc_info=True)
+            raise
