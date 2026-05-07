@@ -17,6 +17,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 # Resolve .env relative to this file so it loads correctly regardless
 # of which directory uvicorn is launched from.
@@ -39,6 +43,8 @@ async def lifespan(app: FastAPI):
     # No explicit teardown needed: Chroma flushes on process exit.
 
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["20/minute"])
+
 app = FastAPI(
     title="DocSense",
     description="AI-powered documentation agent with grounded Q&A and source citations.",
@@ -46,6 +52,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

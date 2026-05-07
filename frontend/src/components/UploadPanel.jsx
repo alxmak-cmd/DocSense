@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { DEMO_DOCS } from '../demoData'
 
 // TODO: move to env var before any production use — currently hardcoded for Vercel/Render portfolio deployment
 const API_BASE = 'https://docsense-backend-us3p.onrender.com'
@@ -52,7 +53,34 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [dragging, setDragging] = useState(false)
+  const [loadingDemo, setLoadingDemo] = useState(false)
+  const [demoLoaded, setDemoLoaded] = useState(false)
+  const [demoError, setDemoError] = useState(null)
   const inputRef = useRef(null)
+
+  const handleLoadDemo = async () => {
+    setLoadingDemo(true)
+    setDemoError(null)
+    let failed = null
+    for (const doc of DEMO_DOCS) {
+      try {
+        const content_base64 = btoa(unescape(encodeURIComponent(doc.content)))
+        const res = await fetch(`${API_BASE}/ingest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: doc.filename, content_base64 }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.detail || data.error || 'Ingest failed')
+        onIngest({ name: data.document_name, chunks: data.chunks_indexed })
+      } catch (err) {
+        failed = err.message
+      }
+    }
+    setLoadingDemo(false)
+    if (failed) setDemoError(failed)
+    else setDemoLoaded(true)
+  }
 
   const handleFile = async (file) => {
     const ext = '.' + file.name.split('.').pop().toLowerCase()
@@ -112,6 +140,54 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
           <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
             {indexStatus.document_count} doc{indexStatus.document_count !== 1 ? 's' : ''} · {indexStatus.chunk_count} chunks
           </p>
+        )}
+      </div>
+
+      {/* Demo mode */}
+      <div style={{
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe',
+        borderRadius: 8,
+        padding: '12px 14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}>
+        <div>
+          <p style={{ fontSize: 12, color: '#1e40af', fontWeight: 700, marginBottom: 4 }}>Demo Mode</p>
+          <p style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.5 }}>
+            Load 6 pre-built documentation files containing deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
+          </p>
+          <p style={{ fontSize: 12, color: '#1e3a8a', marginTop: 8, marginBottom: 2, fontWeight: 600 }}>Try asking:</p>
+          <ul style={{ margin: 0, paddingLeft: 16 }}>
+            {[
+              'What is the rate limit for the standard tier?',
+              'How many times does the SDK retry a failed request?',
+              'How long is customer PII retained after account closure?',
+            ].map(q => (
+              <li key={q} style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.6 }}>{q}</li>
+            ))}
+          </ul>
+        </div>
+        <button
+          onClick={handleLoadDemo}
+          disabled={loadingDemo || demoLoaded}
+          style={{
+            padding: '8px 0',
+            borderRadius: 7,
+            border: 'none',
+            background: demoLoaded ? '#dcfce7' : loadingDemo ? '#e2e8f0' : '#3b82f6',
+            color: demoLoaded ? '#15803d' : loadingDemo ? '#94a3b8' : '#fff',
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: loadingDemo || demoLoaded ? 'default' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
+        </button>
+        {demoError && (
+          <p style={{ fontSize: 11, color: '#dc2626' }}>{demoError}</p>
         )}
       </div>
 

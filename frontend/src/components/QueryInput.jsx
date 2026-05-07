@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PRESET_QUESTIONS } from '../demoData'
 
 export default function QueryInput({ onSubmit, loading, hasDocuments }) {
   const [query, setQuery] = useState('')
@@ -72,6 +73,33 @@ export default function QueryInput({ onSubmit, loading, hasDocuments }) {
       >
         {loading ? 'Thinking…' : 'Ask'}
       </button>
+    </div>
+
+    {/* Preset questions */}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 2 }}>
+      <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', whiteSpace: 'nowrap' }}>Try:</span>
+      {PRESET_QUESTIONS.map(q => (
+        <button
+          key={q}
+          onClick={() => setQuery(q)}
+          disabled={loading}
+          style={{
+            fontSize: 11,
+            padding: '4px 10px',
+            borderRadius: 12,
+            border: '1px solid #e2e8f0',
+            background: '#f8fafc',
+            color: '#475569',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'background 0.1s, border-color 0.1s',
+          }}
+          onMouseEnter={e => { if (!loading) { e.target.style.background = '#e2e8f0'; e.target.style.borderColor = '#cbd5e1' } }}
+          onMouseLeave={e => { e.target.style.background = '#f8fafc'; e.target.style.borderColor = '#e2e8f0' }}
+        >
+          {q}
+        </button>
+      ))}
     </div>
   )
 }
