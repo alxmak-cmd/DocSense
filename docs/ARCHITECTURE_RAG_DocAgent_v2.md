@@ -1,7 +1,5 @@
 # Architecture: DocSense — RAG Documentation Agent
-**Classification:** Portfolio Artifact | Principal PM IC Candidate  
-**Version:** 2.0  
-**Target Roles:** Twilio Principal PM (Copilot Backend), IDC Principal PM-T (AI Discovery Platform)
+**Version:** 2.0
 
 ---
 
@@ -227,12 +225,9 @@ P95 latency in Phase 1 eval: 7296ms (driven by Voyage AI free tier rate limiting
 
 ---
 
-## Artifact Metadata
+## Metadata
 
 | Field | Value |
 |---|---|
-| Target Roles | Twilio Principal PM (Copilot Backend), IDC Principal PM-T (AI Discovery Platform) |
-| Portfolio Signal | System design judgment, ADR documentation, failure mode thinking, tradeoff rationale |
-| Build Method | BMAD Method v6.3 + Claude Code |
 | Stack | React / Vite / FastAPI / Voyage AI / Qdrant / Claude API |
 | Version | 2.0 — updated with Phase 1 build decisions |
