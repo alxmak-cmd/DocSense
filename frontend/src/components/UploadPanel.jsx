@@ -310,9 +310,6 @@ export default function UploadPanel({ onIngest, onClear, documents, indexStatus 
         >
           {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
         </button>
-        <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.4 }}>
-          Note: Due to free tier API limits, please wait 30 seconds between uploads if loading your own docs.
-        </p>
         {demoError && (
           <p style={{ fontSize: 11, color: '#dc2626', lineHeight: 1.4 }}>{demoError}</p>
         )}
@@ -320,7 +317,7 @@ export default function UploadPanel({ onIngest, onClear, documents, indexStatus 
 
       {/* Cold start notice */}
       <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
-        Note: This app runs on a free-tier backend that sleeps after inactivity. First request may take up to 30 seconds to wake up — this is expected behavior for a portfolio deployment.
+        Note: First request after a period of inactivity may take up to 30 seconds while the backend wakes up. A countdown will appear automatically.
       </p>
 
       {/* Retry banner */}
