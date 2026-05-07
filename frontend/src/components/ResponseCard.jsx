@@ -92,6 +92,12 @@ export default function ResponseCard({ response, query, loading, error }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <TypeBadge type="not_found" />
         </div>
+        {query && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>You asked</span>
+            <p style={{ fontSize: 14, color: '#374151', fontWeight: 500, lineHeight: 1.5 }}>{query}</p>
+          </div>
+        )}
         <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6 }}>
           Not found in your indexed documentation. Check documentation coverage or ask a teammate.
         </p>
@@ -123,13 +129,9 @@ export default function ResponseCard({ response, query, loading, error }) {
 
       {/* Question */}
       {query && (
-        <div style={{
-          fontSize: 13,
-          color: '#64748b',
-          borderLeft: '3px solid #e2e8f0',
-          paddingLeft: 12,
-        }}>
-          {query}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>You asked</span>
+          <p style={{ fontSize: 14, color: '#374151', fontWeight: 500, lineHeight: 1.5 }}>{query}</p>
         </div>
       )}
 
