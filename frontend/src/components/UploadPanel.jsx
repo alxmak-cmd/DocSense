@@ -61,7 +61,7 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
   const handleLoadDemo = async () => {
     setLoadingDemo(true)
     setDemoError(null)
-    let failed = null
+    const failures = []
     for (const doc of DEMO_DOCS) {
       try {
         const content_base64 = btoa(unescape(encodeURIComponent(doc.content)))
@@ -74,11 +74,12 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         if (!res.ok) throw new Error(data.detail || data.error || 'Ingest failed')
         onIngest({ name: data.document_name, chunks: data.chunks_indexed })
       } catch (err) {
-        failed = err.message
+        console.error(`Demo ingest failed [${doc.filename}]:`, err.message)
+        failures.push(doc.filename)
       }
     }
     setLoadingDemo(false)
-    if (failed) setDemoError(failed)
+    if (failures.length > 0) setDemoError(`Failed to load: ${failures.join(', ')}`)
     else setDemoLoaded(true)
   }
 
@@ -143,54 +144,6 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
         )}
       </div>
 
-      {/* Demo mode */}
-      <div style={{
-        background: '#eff6ff',
-        border: '1px solid #bfdbfe',
-        borderRadius: 8,
-        padding: '12px 14px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-      }}>
-        <div>
-          <p style={{ fontSize: 12, color: '#1e40af', fontWeight: 700, marginBottom: 4 }}>Demo Mode</p>
-          <p style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.5 }}>
-            Load 6 pre-built documentation files containing deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
-          </p>
-          <p style={{ fontSize: 12, color: '#1e3a8a', marginTop: 8, marginBottom: 2, fontWeight: 600 }}>Try asking:</p>
-          <ul style={{ margin: 0, paddingLeft: 16 }}>
-            {[
-              'What is the rate limit for the standard tier?',
-              'How many times does the SDK retry a failed request?',
-              'How long is customer PII retained after account closure?',
-            ].map(q => (
-              <li key={q} style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.6 }}>{q}</li>
-            ))}
-          </ul>
-        </div>
-        <button
-          onClick={handleLoadDemo}
-          disabled={loadingDemo || demoLoaded}
-          style={{
-            padding: '8px 0',
-            borderRadius: 7,
-            border: 'none',
-            background: demoLoaded ? '#dcfce7' : loadingDemo ? '#e2e8f0' : '#3b82f6',
-            color: demoLoaded ? '#15803d' : loadingDemo ? '#94a3b8' : '#fff',
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: loadingDemo || demoLoaded ? 'default' : 'pointer',
-            transition: 'background 0.15s',
-          }}
-        >
-          {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
-        </button>
-        {demoError && (
-          <p style={{ fontSize: 11, color: '#dc2626' }}>{demoError}</p>
-        )}
-      </div>
-
       {/* Drop zone */}
       <div
         onClick={() => inputRef.current?.click()}
@@ -233,6 +186,43 @@ export default function UploadPanel({ onIngest, documents, indexStatus }) {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Demo mode */}
+      <div style={{
+        border: '1px solid #e2e8f0',
+        borderRadius: 8,
+        padding: '10px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Demo Mode</p>
+          <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+            Load 6 pre-built docs with deliberate conflicts, then use the preset questions to see DocSense detect contradictions across sources.
+          </p>
+        </div>
+        <button
+          onClick={handleLoadDemo}
+          disabled={loadingDemo || demoLoaded}
+          style={{
+            padding: '6px 0',
+            borderRadius: 6,
+            border: `1px solid ${demoLoaded ? '#86efac' : '#e2e8f0'}`,
+            background: demoLoaded ? '#f0fdf4' : '#f8fafc',
+            color: demoLoaded ? '#15803d' : loadingDemo ? '#94a3b8' : '#475569',
+            fontWeight: 600,
+            fontSize: 12,
+            cursor: loadingDemo || demoLoaded ? 'default' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {demoLoaded ? 'Demo Docs Loaded' : loadingDemo ? 'Loading demo docs…' : 'Load Demo Docs'}
+        </button>
+        {demoError && (
+          <p style={{ fontSize: 11, color: '#dc2626' }}>{demoError}</p>
+        )}
       </div>
 
       {/* Error */}
