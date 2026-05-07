@@ -19,6 +19,7 @@ export default function QueryInput({ onSubmit, loading, hasDocuments }) {
   }
 
   return (
+    <>
     <div style={{
       display: 'flex',
       gap: 8,
@@ -101,5 +102,6 @@ export default function QueryInput({ onSubmit, loading, hasDocuments }) {
         </button>
       ))}
     </div>
+    </>
   )
 }
